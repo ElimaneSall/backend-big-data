@@ -4,12 +4,22 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class Tester {
 
-    public static void main(String[] args) {
+    private static double calculateAverageTemperature(List<Climat> climatList) {
+        if (climatList.isEmpty()) {
+            return 0.0;
+        }
+        // Calculer la moyenne de température pour l'heure donnée
+        double sum = 0.0;
+        for (Climat c : climatList) {
+            sum += c.getTemperature().doubleValue(); // Assurez-vous que vous avez une méthode getTemperature() dans la classe Climat pour obtenir la valeur de la température
+        }
+        return sum / climatList.size();
+    }
+    public static void main(String[] args) throws ParseException {
         ClimatImpl climat = new ClimatImpl();
 
         LogImpl log = new LogImpl();
@@ -63,6 +73,48 @@ public class Tester {
 //        for (Climat c : climatList) {
 //            System.out.println("Heure de collecte : " + c.getTimeCollecte() + ", Température : " + c.getTemperature());
 //        }
+
+
+        Date currentHour = new Date();
+        Date hourToRetrieve;
+
+        // Convertir l'heure actuelle en format "HH"
+        SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
+        String currentHourString = hourFormat.format(currentHour);
+
+        // Créer le dictionnaire pour stocker les températures par heure
+        Map<String, Double> temperatureByHour = new TreeMap<>(); // TreeMap pour trier les résultats par heure
+
+        // Pour chaque heure de 00h jusqu'à l'heure actuelle
+        for (int hour = 0; hour <= Integer.parseInt(currentHourString); hour++) {
+            // Définir l'heure dans le calendrier
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(currentHour);
+            calendar.set(Calendar.HOUR_OF_DAY, hour);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+
+            // Récupérer la date correspondant à l'heure donnée
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            hourToRetrieve = dateFormat.parse("2023-07-22 7:32:57");
+//            Date hourDate = calendar.getTime();
+            // Vérifier si des données Climat sont disponibles pour l'heure donnée
+            List<Climat> climatList = climat.getAllDataPerHour(hourToRetrieve);
+            System.out.println("Date>>"+climatList.get(1).getCurrentTime() +"Temp"+climatList.get(1).getTemperature() );
+            if (!climatList.isEmpty()) {
+                // Calculer la moyenne de température pour cette heure
+                Double averageTemperature = calculateAverageTemperature(climatList);
+
+                // Ajouter l'heure et la moyenne de température dans le dictionnaire
+                String hourString = String.format("%02dh", hour); // Formatage de l'heure pour ajouter un zéro devant les heures de 0 à 9
+                temperatureByHour.put(hourString, averageTemperature);
+            }
+
+//            System.out.println(temperatureByHour);
+        }
+
+
     }
     }
 

@@ -62,9 +62,10 @@ public class ClimatImpl {
 
     public List<Climat> getAllDataPerHour(Date hour) {
         EntityManager em = ENTITY_MANAGER_FACTORY.createEntityManager();
+        System.out.println("La date"+hour);
         try {
             // Exécuter une requête pour récupérer les données Climat pour l'heure donnée
-            String queryString = "SELECT c FROM Climat c WHERE HOUR(c.timeCollecte) = HOUR(:hour) AND MINUTE(c.timeCollecte) = MINUTE(:hour)";
+            String queryString = "SELECT c FROM Climat c WHERE YEAR(c.timeCollecte)=YEAR(:hour) and month(c.timeCollecte)=month (:hour)  and day(c.timeCollecte)=DAY(:hour)";
             TypedQuery<Climat> query = em.createQuery(queryString, Climat.class);
             query.setParameter("hour", hour);
             List<Climat> climatList = query.getResultList();

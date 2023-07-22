@@ -52,15 +52,11 @@ import java.util.*;
 
             // Pour chaque heure de 00h jusqu'à l'heure actuelle
             for (int hour = 0; hour <= Integer.parseInt(currentHourString); hour++) {
-                // Définir l'heure dans le calendrier
-                Calendar calendar = Calendar.getInstance();
-                calendar.setTime(currentHour);
-                calendar.set(Calendar.HOUR_OF_DAY, hour);
-                calendar.set(Calendar.MINUTE, 0);
-                calendar.set(Calendar.SECOND, 0);
+                Date hourDate = new Date();
 
-                // Récupérer la date correspondant à l'heure donnée
-                Date hourDate = calendar.getTime();
+                hourDate.setHours(hour);
+                hourDate.setMinutes(0);
+                hourDate.setSeconds(0);
 
                 // Vérifier si des données Climat sont disponibles pour l'heure donnée
                 List<Climat> climatList = climat.getAllDataPerHour(hourDate);

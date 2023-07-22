@@ -1,9 +1,6 @@
 package com.example.backendweather.kafka;
 
-import com.example.backendweather.Climat;
-import com.example.backendweather.ClimatImpl;
-import com.example.backendweather.LogEntity;
-import com.example.backendweather.LogImpl;
+import com.example.backendweather.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -20,7 +17,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -33,6 +29,7 @@ public class ProducerApp {
 
     public static void main(String[] args) {
         ClimatImpl climat = new ClimatImpl();
+        PredictionImplement predictionImplement = new PredictionImplement();
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         properties.put(ProducerConfig.CLIENT_ID_CONFIG, "client-producer-1");
@@ -45,10 +42,20 @@ public class ProducerApp {
         executorService.scheduleAtFixedRate(() -> {
             try {
                 String weatherData = getWeatherDataFromAPI();
+
+                String predictData = getPredictData();
                 String key = "weather";
 
                 // Prétraitement des données
                 JSONObject jsonObject = new JSONObject(weatherData);
+
+                JSONObject jsonObject1 = new JSONObject(predictData);
+                int datePredictionInt = jsonObject1.getInt("datePrediction");
+                long datePredictionLong = (long) datePredictionInt; // Conversion int vers long
+                Timestamp datePredictionTimestamp = new Timestamp(datePredictionLong);
+                Predictions prediction = new Predictions(datePredictionTimestamp, jsonObject1.getString("temperature"));
+
+                predictionImplement.savePrediction(prediction);
 
                 // Conversion des données
                 int humidity = jsonObject.getJSONObject("main").getInt("humidity");
@@ -161,6 +168,38 @@ public class ProducerApp {
     private static String getWeatherDataFromAPI() throws IOException {
         ProducerApp logger = new ProducerApp();
         URL url = new URL(API_URL);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        long startTime = System.currentTimeMillis();
+        try {
+            int responseCode = connection.getResponseCode();
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                if (duration <= 1000) {
+                    logger.logEvent("normal", "Arrivée normale des données", "résolu");
+                } else {
+                    logger.logEvent("retard", "Retard de données", "en cours de résolution");
+                }
+                InputStream inputStream = connection.getInputStream();
+                Scanner scanner = new Scanner(inputStream).useDelimiter("\\A");
+                return scanner.hasNext() ? scanner.next() : "";
+            } else {
+                logger.logEvent("absence", "Absence de données", "non résolu");
+                throw new IOException("Failed to fetch weather data. Response Code: " + responseCode);
+            }
+        } catch (IOException e) {
+            logger.logEvent("absence", "Absence de données", "non résolu");
+            throw e;
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private static String getPredictData() throws IOException {
+        ProducerApp logger = new ProducerApp();
+        URL url = new URL("http://localhost/predict-next-3-hours-temp");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
 
