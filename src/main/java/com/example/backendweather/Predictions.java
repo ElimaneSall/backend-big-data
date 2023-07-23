@@ -1,11 +1,9 @@
 package com.example.backendweather;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
+@Entity
 public class Predictions {
     @Id
     @GeneratedValue

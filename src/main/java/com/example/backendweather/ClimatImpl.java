@@ -60,17 +60,37 @@ public class ClimatImpl {
     }
 
 
-    public List<Climat> getAllDataPerHour(Date hour) {
+    public Map<String, Double> getAllDataPerHour() {
         EntityManager em = ENTITY_MANAGER_FACTORY.createEntityManager();
-        System.out.println("La date"+hour);
         try {
-            // Exécuter une requête pour récupérer les données Climat pour l'heure donnée
-            String queryString = "SELECT c FROM Climat c WHERE YEAR(c.timeCollecte)=YEAR(:hour) and month(c.timeCollecte)=month (:hour)  and day(c.timeCollecte)=DAY(:hour)";
-            TypedQuery<Climat> query = em.createQuery(queryString, Climat.class);
-            query.setParameter("hour", hour);
-            List<Climat> climatList = query.getResultList();
+            Date currentDate = new Date();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(currentDate);
+            int currentYear = calendar.get(Calendar.YEAR);
+            int currentMonth = calendar.get(Calendar.MONTH) + 1; // Note: Months are 0-indexed
+            int currentDay = calendar.get(Calendar.DAY_OF_MONTH);
 
-            return climatList;
+            String queryString = "SELECT HOUR(c.timeCollecte) as hour, AVG(c.temperature) as avgTemp " +
+                    "FROM Climat c " +
+                    "WHERE YEAR(c.timeCollecte) = :year " +
+                    "AND MONTH(c.timeCollecte) = :month " +
+                    "AND DAY(c.timeCollecte) = :day " +
+                    "GROUP BY HOUR(c.timeCollecte)";
+            TypedQuery<Object[]> query = em.createQuery(queryString, Object[].class);
+            query.setParameter("year", currentYear);
+            query.setParameter("month", currentMonth);
+            query.setParameter("day", currentDay);
+
+            List<Object[]> resultList = query.getResultList();
+            Map<String, Double> averageTemperatures = new HashMap<>();
+
+            for (Object[] result : resultList) {
+                int hour = (int) result[0];
+                Double avgTemp = (Double) result[1];
+                averageTemperatures.put(String.format("%02dh", hour), avgTemp);
+            }
+
+            return averageTemperatures;
         } finally {
             em.close();
         }

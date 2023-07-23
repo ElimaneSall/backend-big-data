@@ -6,6 +6,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -33,7 +34,9 @@ import java.util.*;
             }
             double averageTemperature = sum / climats.size();
 
-            return averageTemperature;
+            double roundedAverage = Math.round(averageTemperature * 100.0) / 100.0;
+
+            return roundedAverage;
         }
         // Moyenne de la temperature par heure
         @Path("/meamTemperaturePerHour")
@@ -41,36 +44,8 @@ import java.util.*;
         @Produces(MediaType.APPLICATION_JSON)
         public Map<String, Double> meamTemperaturePerHour() {
             // Récupérer l'heure actuelle
-            Date currentHour = new Date();
-
-            // Convertir l'heure actuelle en format "HH"
-            SimpleDateFormat hourFormat = new SimpleDateFormat("HH");
-            String currentHourString = hourFormat.format(currentHour);
-
-            // Créer le dictionnaire pour stocker les températures par heure
-            Map<String, Double> temperatureByHour = new TreeMap<>(); // TreeMap pour trier les résultats par heure
-
-            // Pour chaque heure de 00h jusqu'à l'heure actuelle
-            for (int hour = 0; hour <= Integer.parseInt(currentHourString); hour++) {
-                Date hourDate = new Date();
-
-                hourDate.setHours(hour);
-                hourDate.setMinutes(0);
-                hourDate.setSeconds(0);
-
-                // Vérifier si des données Climat sont disponibles pour l'heure donnée
-                List<Climat> climatList = climat.getAllDataPerHour(hourDate);
-                if (!climatList.isEmpty()) {
-                    // Calculer la moyenne de température pour cette heure
-                    Double averageTemperature = calculateAverageTemperature(climatList);
-
-                    // Ajouter l'heure et la moyenne de température dans le dictionnaire
-                    String hourString = String.format("%02dh", hour); // Formatage de l'heure pour ajouter un zéro devant les heures de 0 à 9
-                    temperatureByHour.put(hourString, averageTemperature);
-                }
-            }
-
-            return temperatureByHour;
+            Map<String, Double> averageTemperatures = climat.getAllDataPerHour();
+            return averageTemperatures;
         }
 
     private double calculateAverageTemperature(List<Climat> climatList) {

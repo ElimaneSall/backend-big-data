@@ -5,6 +5,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class ProducerApp {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
-        KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(properties);
+//        KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(properties);
 
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleAtFixedRate(() -> {
@@ -50,13 +51,22 @@ public class ProducerApp {
                 JSONObject jsonObject = new JSONObject(weatherData);
 
                 JSONObject jsonObject1 = new JSONObject(predictData);
-                int datePredictionInt = jsonObject1.getInt("datePrediction");
-                long datePredictionLong = (long) datePredictionInt; // Conversion int vers long
-                Timestamp datePredictionTimestamp = new Timestamp(datePredictionLong);
-                Predictions prediction = new Predictions(datePredictionTimestamp, jsonObject1.getString("temperature"));
+                JSONArray next3HoursTempArray = jsonObject1.getJSONArray("next_3_hours_temp");
 
-                predictionImplement.savePrediction(prediction);
+                for (int i = 0; i < next3HoursTempArray.length(); i++) {
+                    JSONObject predictionObject = next3HoursTempArray.getJSONObject(i);
+                    String datetimeStr = predictionObject.getString("datetime");
+                    double predictedTemp = predictionObject.getDouble("predicted_temp");
 
+                    // Convert datetimeStr to Timestamp
+                    Timestamp datePredictionTimestamp = Timestamp.valueOf(datetimeStr);
+
+                    // Create a new Predictions object and save it to the database
+                    Predictions prediction = new Predictions(datePredictionTimestamp, String.valueOf(predictedTemp));
+
+                    predictionImplement.savePrediction(prediction);
+
+                }
                 // Conversion des données
                 int humidity = jsonObject.getJSONObject("main").getInt("humidity");
                 int pressure = jsonObject.getJSONObject("main").getInt("pressure");
@@ -141,13 +151,13 @@ public class ProducerApp {
 
                 climat.saveClimat(climat1);
 
-                kafkaProducer.send(new ProducerRecord<>(TOPIC_NAME, key, selectedData.toString()), (metadata, ex) -> {
-                    if (ex == null) {
-                        System.out.println("Sent weather data => " + selectedData.toString() + ", Partition => " + metadata.partition() + ", Offset => " + metadata.offset());
-                    } else {
-                        System.err.println("Error sending weather data: " + ex.getMessage());
-                    }
-                });
+//                kafkaProducer.send(new ProducerRecord<>(TOPIC_NAME, key, selectedData.toString()), (metadata, ex) -> {
+//                    if (ex == null) {
+//                        System.out.println("Sent weather data => " + selectedData.toString() + ", Partition => " + metadata.partition() + ", Offset => " + metadata.offset());
+//                    } else {
+//                        System.err.println("Error sending weather data: " + ex.getMessage());
+//                    }
+//                });
             } catch (IOException e) {
                 System.err.println("Failed to fetch weather data: " + e.getMessage());
             }
@@ -198,6 +208,7 @@ public class ProducerApp {
     }
 
     private static String getPredictData() throws IOException {
+
         ProducerApp logger = new ProducerApp();
         URL url = new URL("http://localhost/predict-next-3-hours-temp");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();

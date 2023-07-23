@@ -34,7 +34,7 @@ public class LogImpl {
     public List<LogEntity> getAllLogs() {
         EntityManager em = ENTITY_MANAGER_FACTORY.createEntityManager();
         try {
-            return em.createQuery("SELECT c FROM LogEntity c", LogEntity.class).getResultList();
+            return em.createQuery("SELECT c FROM LogEntity c order by c.dateLog desc ", LogEntity.class).getResultList();
         } finally {
             em.close();
         }

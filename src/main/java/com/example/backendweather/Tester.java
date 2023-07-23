@@ -100,16 +100,9 @@ public class Tester {
             hourToRetrieve = dateFormat.parse("2023-07-22 7:32:57");
 //            Date hourDate = calendar.getTime();
             // Vérifier si des données Climat sont disponibles pour l'heure donnée
-            List<Climat> climatList = climat.getAllDataPerHour(hourToRetrieve);
-            System.out.println("Date>>"+climatList.get(1).getCurrentTime() +"Temp"+climatList.get(1).getTemperature() );
-            if (!climatList.isEmpty()) {
-                // Calculer la moyenne de température pour cette heure
-                Double averageTemperature = calculateAverageTemperature(climatList);
+            Map<String, Double> climatList = climat.getAllDataPerHour();
+            System.out.println("Date>>" +climatList );
 
-                // Ajouter l'heure et la moyenne de température dans le dictionnaire
-                String hourString = String.format("%02dh", hour); // Formatage de l'heure pour ajouter un zéro devant les heures de 0 à 9
-                temperatureByHour.put(hourString, averageTemperature);
-            }
 
 //            System.out.println(temperatureByHour);
         }
